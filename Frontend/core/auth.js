@@ -121,5 +121,5 @@ export function redirectByRole(user = null) {
     }
 
     // default: user
-    window.location.href = "/pages/user/items.html";
+    window.location.href = "/pages/user/dashboard.html";
 }

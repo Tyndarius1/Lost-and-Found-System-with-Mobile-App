@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- RIGHT: Claim panel -->
-                <div class="web-card" style="padding: 32px; position: sticky; top: 104px;">
+                <div id="claimPanel" class="web-card" style="padding: 32px; position: sticky; top: 104px;">
                     <h2 style="font-size: 1.5rem; margin-bottom: 8px;">Claim this item</h2>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">
                         Provide proof details to verify ownership. Be as descriptive as possible.
@@ -79,12 +79,14 @@
 
     <script type="module">
         import { mountNavbar } from "/components/navbar.js";
-        import { requireAuth } from "/core/auth.js";
+        import { requireAuth, getUser } from "/core/auth.js";
         import { api } from "/core/api.js";
         import { toast } from "/components/toast.js";
 
         requireAuth();
         mountNavbar();
+
+        const me = getUser();
 
         const params = new URLSearchParams(window.location.search);
         const itemId = params.get("id");
@@ -99,10 +101,27 @@
         const imgWrap = document.getElementById("itemImageWrap");
         const img = document.getElementById("itemImage");
 
+        const claimPanel = document.getElementById("claimPanel");
         const claimBtn = document.getElementById("btnClaim");
         const claimState = document.getElementById("claimState");
 
         let currentItem = null;
+
+        function getReporterId(item) {
+            return (
+                item?.reported_by_id ??
+                item?.reported_by ??
+                item?.reporter_id ??
+                item?.user_id ??
+                item?.owner_id ??
+                item?.reportedById ??
+                item?.reportedBy ??
+                item?.reporter?.id ??
+                item?.user?.id ??
+                item?.owner?.id ??
+                null
+            );
+        }
 
         function badge(text, bg, color) {
             return `<span style="padding: 6px 12px; border-radius: 999px; background: ${bg}; color: ${color}; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;">${text}</span>`;
@@ -110,6 +129,9 @@
 
         function render(item) {
             currentItem = item;
+
+            const reporterId = getReporterId(item);
+            const isMyPost = me?.id != null && reporterId != null && String(me.id) === String(reporterId);
 
             const badgeBg = item.status === "pending" ? "rgba(245,158,11,.15)" : item.status === "matched" ? "rgba(139,92,246,.15)" : item.status === "claimed" ? "rgba(16,185,129,.15)" : "rgba(255,255,255,.08)";
             const badgeColor = item.status === "pending" ? "#fbbf24" : item.status === "matched" ? "#c084fc" : item.status === "claimed" ? "#34d399" : "#a1a1aa";
@@ -159,6 +181,15 @@
             if (item.image_path) {
                 img.src = `/storage/${item.image_path}`;
                 imgWrap.style.display = "block";
+            }
+
+            if (isMyPost) {
+                claimBtn.style.display = "none";
+                document.getElementById("proof").style.display = "none";
+                document.getElementById("proofImage").style.display = "none";
+                claimPanel.querySelector("label")?.style && (claimPanel.querySelector("label").style.display = "none");
+                claimState.innerHTML = "You reported this item, so you can’t submit a claim for it.";
+                return;
             }
 
             if (item.status !== "pending") {
