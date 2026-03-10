@@ -65,6 +65,26 @@ If you already use something like Laravel Valet (`backend.test`) or a reverse pr
 
 ---
 
+
+## Mobile app (new)
+
+A lightweight mobile-first app is available at:
+
+- `/mobile/index.html`
+
+It supports:
+- Login/logout
+- Feed browsing with search/type/status filters
+- Submit claim from feed
+- View **My Claims**
+- Review queue tab:
+  - `user` role reviews claims for their own posted items (`/my/item-claims`)
+  - `staff/admin` role reviews full claims queue (`/claims`)
+
+Use the same backend API configuration as the web app (`window.APP_CONFIG.apiBaseUrl`).
+
+---
+
 ## Project structure (overview)
 
 | Path | Purpose |
@@ -104,13 +124,15 @@ Users cannot open staff or admin pages; they are redirected to the user area if 
 
 | Feature | Page | Description |
 |--------|------|-------------|
-| **Claims Queue** | `/pages/staff/claims.html` | Review claim requests; approve, deny, or mark as released; filter by status and search. |
-| **Match Items** | `/pages/staff/match.html` | Select one lost and one found item and mark them as matched. |
+| **Claims Queue** | `/pages/staff/claims.html` | Supervise claim requests, handle escalations, and complete **release** after verification; filter by status and search. |
+| **Match Items** | `/pages/staff/match.html` | Reconcile likely duplicate reports (lost vs found posts) so staff can consolidate and prevent conflicting claim outcomes. |
 | **QR Tools** | `/pages/staff/qr.html` | Generate QR codes for items by item number; scan/read QR (e.g. for inventory). |
 | **Print Center** | `/pages/staff/prints.html` | Open/print item details by item ID and claim receipt/release by claim ID. |
 | **Staff dashboard** | `/pages/staff/dashboard.html` | Staff home with links to the tools above. |
 
 Staff cannot open admin-only pages; they are redirected to the staff area (e.g. claims) if they try.
+
+> **Workflow note:** Claim approval/denial can be done by the item reporter (owner of the post) or staff/admin. Staff still handles physical handoff/release for auditability and fraud prevention.
 
 ---
 

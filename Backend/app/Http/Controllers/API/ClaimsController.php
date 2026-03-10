@@ -52,6 +52,30 @@ class ClaimsController extends Controller
         return response()->json($claims);
     }
 
+
+    // Reporter: list claims submitted against items they reported
+    public function myItemClaims(Request $request)
+    {
+        $query = Claim::with([
+            'item:id,title,type,status,reported_by',
+            'claimer:id,name,email,phone,role',
+            'reviewer:id,name,role',
+        ])
+            ->whereHas('item', function ($q) use ($request) {
+                $q->where('reported_by', $request->user()->id);
+            })
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        $perPage = (int) $request->query('per_page', 15);
+        $perPage = max(1, min($perPage, 50));
+
+        return response()->json($query->paginate($perPage)->withQueryString());
+    }
+
     public function store(StoreClaimRequest $request)
     {
         $user = $request->user();
@@ -138,7 +162,7 @@ class ClaimsController extends Controller
     // Staff/Admin actions
     public function approve(ApproveClaimRequest $request, Claim $claim)
     {
-        $this->authorize('updateStatus', $claim);
+        $this->authorize('reviewerDecision', $claim);
 
         if ($claim->status !== 'pending') {
             return response()->json([
@@ -178,13 +202,13 @@ class ClaimsController extends Controller
         }
 
         return response()->json([
-            'message' => 'Claim approved.',
+            'message' => 'Claim approved by reviewer.',
             'claim' => $claim->fresh()->load(['item', 'claimer', 'reviewer']),
         ]);
     }
     public function deny(DenyClaimRequest $request, Claim $claim)
     {
-        $this->authorize('updateStatus', $claim);
+        $this->authorize('reviewerDecision', $claim);
 
         if ($claim->status !== 'pending') {
             return response()->json(['message' => 'Only pending claims can be denied.'], 422);
@@ -206,7 +230,7 @@ class ClaimsController extends Controller
         );
 
         return response()->json([
-            'message' => 'Claim denied.',
+            'message' => 'Claim denied by reviewer.',
             'claim' => $claim->fresh(),
         ]);
     }
