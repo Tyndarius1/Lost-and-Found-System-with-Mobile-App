@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="../../assets/css/tokens.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <link rel="stylesheet" href="../../assets/css/website.css">
+    <title>Lost & Found — Register</title>
+    <script src="../../config.js"></script>
+</head>
+
+<body class="website-layout web-bg-animated">
+    <!-- Premium Navbar replacements -->
+    <nav class="web-navbar">
+        <div class="web-container">
+            <a href="../../index.html" class="web-brand">
+                <div class="web-logo"></div>
+                <div class="web-brand-text">Lost<span>&</span>Found</div>
+            </a>
+            <div class="web-nav-links">
+                <a href="../../pages/auth/login.html" class="web-nav-link">Login Instead</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="web-main"
+        style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 200px);">
+        <div class="web-container animate-in stagger-1" style="width: 100%; max-width: 520px; padding: 0 20px;">
+            <div class="web-card web-card-hoverable" style="padding: 40px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 2rem;">Create <span class="text-gradient">Account</span></h2>
+                <p style="margin: 0 0 32px 0; color: var(--text-muted); font-size: 1rem; line-height: 1.5;">Join the
+                    network to report and claim items.</p>
+
+                <form id="registerForm" class="grid" onsubmit="event.preventDefault();" style="gap: 24px;">
+                    <div class="animate-in stagger-2">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Full
+                            Name</label>
+                        <input class="web-input" id="name" type="text" placeholder="John Doe" required
+                            style="font-size: 1rem; padding: 12px 0;">
+                    </div>
+                    <div class="animate-in stagger-3">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Email
+                            Address</label>
+                        <input class="web-input" id="email" type="email" placeholder="john@example.com" required
+                            style="font-size: 1rem; padding: 12px 0;">
+                    </div>
+                    <div class="animate-in stagger-4">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Password</label>
+                        <input class="web-input" id="password" type="password" placeholder="Min. 8 characters" required
+                            style="font-size: 1rem; padding: 12px 0;">
+                    </div>
+                    <div class="animate-in" style="animation-delay: 0.5s;">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Confirm
+                            Password</label>
+                        <input class="web-input" id="password_confirmation" type="password"
+                            placeholder="Confirm your password" required style="font-size: 1rem; padding: 12px 0;">
+                    </div>
+
+                    <div class="animate-in" style="animation-delay: 0.6s; margin-top: 16px;">
+                        <button class="web-btn web-btn-primary" id="btnRegister" style="width: 100%;">Create
+                            Account</button>
+                    </div>
+                    <div class="animate-in" style="animation-delay: 0.6s; text-align: center; margin-top: 16px;">
+                        <a href="../../pages/auth/login.html"
+                            style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.5px; transition: color 0.3s ease;"
+                            onmouseover="this.style.color='var(--text-main)'"
+                            onmouseout="this.style.color='var(--text-muted)'">Already have an account? Login</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { api } from "../../core/api.js";
+        import { setAuth, getToken, redirectByRole } from "../../core/auth.js";
+        import { toast } from "../../components/toast.js";
+        import { ui } from "../../core/ui.js";
+
+        // Redirect if already logged in
+        if (getToken()) {
+            redirectByRole();
+        }
+
+        document.getElementById("btnRegister").addEventListener("click", async () => {
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const password_confirmation = document.getElementById("password_confirmation").value;
+
+            if (!name || !email || !password || !password_confirmation) {
+                toast("All fields are required.", "warn");
+                return;
+            }
+
+            if (password !== password_confirmation) {
+                toast("Passwords do not match.", "warn");
+                return;
+            }
+
+            ui.disable("#btnRegister", "Registering...");
+
+            try {
+                // Adjust route based on backend configuration. Standard laravel defaults to /auth/register or similar
+                const data = await api.post("/auth/register", {
+                    name,
+                    email,
+                    password,
+                    password_confirmation
+                });
+
+                setAuth(data.token, data.user);
+                toast("Registration successful. Welcome!", "success");
+
+                redirectByRole(data.user);
+
+            } catch (e) {
+                // api.js handles basic error messaging
+                ui.enable("#btnRegister");
+            }
+        });
+    </script>
+    <script type="module" src="../../components/toast.js"></script>
+
+    <script type="module">
+        import { mountFooter } from "/components/footer.js";
+        mountFooter();
+    </script>
+</body>
+
+</html>

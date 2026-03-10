@@ -1,0 +1,159 @@
+<?php
+
+/* |-------------------------------------------------------------------------- | API Routes |-------------------------------------------------------------------------- | | Here is where you can register API routes for your application. These | routes are loaded by the RouteServiceProvider within a group which | is assigned the "api" middleware group. Enjoy building your API! | */
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+
+//API/Log Controller
+use App\Http\Controllers\API\Logs\ActivityLogsController;
+
+//API/Import Controller
+use App\Http\Controllers\API\Imports\ImportsController;
+
+
+
+//API/Report Controller
+use App\Http\Controllers\API\Reports\ReportsController;
+
+
+//API/Media Controllers
+use App\Http\Controllers\API\Media\ItemMediaController;
+use App\Http\Controllers\API\Media\ClaimMediaController;
+use App\Http\Controllers\API\Media\QrController;
+
+
+//API/Auth Controllers
+use App\Http\Controllers\API\Auth\LoginController;
+use App\Http\Controllers\API\Auth\RegisterController;
+use App\Http\Controllers\API\Auth\LogoutController;
+use App\Http\Controllers\API\Auth\MeController;
+use App\Http\Controllers\ProfileController;
+
+//API/Controllers
+use App\Http\Controllers\API\ItemsController;
+use App\Http\Controllers\API\ClaimsController;
+use App\Http\Controllers\API\MatchesController;
+
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+
+
+//API/Auth Routes
+Route::prefix('auth')->group(function () {
+
+    Route::post('/register', RegisterController::class);
+    Route::middleware('throttle:5,1')->post('/login', LoginController::class);
+
+    Route::middleware('auth:sanctum')->group(
+        function () {
+
+            Route::get('/me', MeController::class);
+            Route::post('/logout', LogoutController::class);
+
+        }
+    );
+});
+
+
+
+
+
+//API/Items Routes
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::post('/profile', [ProfileController::class, 'update']);
+
+    /**
+     * ITEMS (Lost/Found reports)
+     * user/staff/admin can create reports and view lists
+     */
+    Route::get('/items', [ItemsController::class, 'index']);
+    Route::post('/items', [ItemsController::class, 'store']);
+    Route::get('/items/{item}', [ItemsController::class, 'show']);
+    Route::put('/items/{item}', [ItemsController::class, 'update']);
+    Route::delete('/items/{item}', [ItemsController::class, 'destroy']);
+    Route::get('/my/items', [ItemsController::class, 'myItems']);
+
+    /**
+     * CLAIMS
+     * user: submit + view own
+     * staff/admin: review/approve/deny/release + list all
+     */
+    Route::post('/claims', [ClaimsController::class, 'store']);
+    Route::get('/my/claims', [ClaimsController::class, 'myClaims']);
+    Route::get('/claims/{claim}', [ClaimsController::class, 'show']);
+
+    Route::middleware('role:staff,admin')->group(
+        function () {
+            Route::get('/claims', [ClaimsController::class, 'index']);
+            Route::put('/claims/{claim}/approve', [ClaimsController::class, 'approve']);
+            Route::put('/claims/{claim}/deny', [ClaimsController::class, 'deny']);
+            Route::put('/claims/{claim}/release', [ClaimsController::class, 'release']);
+
+            /**
+             * MATCHES (Staff/Admin)
+             */
+            Route::get('/matches', [MatchesController::class, 'index']);
+            Route::post('/matches', [MatchesController::class, 'store']);
+        }
+    );
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Uploads/Downloads
+    Route::post('/items/{item}/image', [ItemMediaController::class, 'uploadImage']);
+    Route::post('/claims/{claim}/proof-image', [ClaimMediaController::class, 'uploadProofImage']);
+    Route::get('/claims/{claim}/proof-image', [ClaimsController::class, 'downloadProof']);
+
+    // QR (staff/admin generates; png is viewable by authenticated users; scan staff/admin)
+    Route::middleware('role:staff,admin')->group(
+        function () {
+            Route::post('/items/{item}/qr', [QrController::class, 'generate']);
+            Route::get('/scan/{token}', [QrController::class, 'scan']);
+        }
+    );
+
+    // QR image endpoint (keep inside auth; or you can make it public if you prefer)
+    Route::get('/items/{item}/qr.png', [QrController::class, 'png'])->name('items.qr.png');
+});
+
+
+
+Route::middleware(['auth:sanctum', 'role:admin,staff'])->group(function () {
+
+    // Excel exports
+    Route::get('/exports/items/excel', [ReportsController::class, 'exportItemsExcel']);
+    Route::get('/exports/claims/excel', [ReportsController::class, 'exportClaimsExcel']);
+
+    // PDF exports
+    Route::get('/exports/items/pdf', [ReportsController::class, 'exportItemsPdf']);
+
+    // Print
+    Route::get('/print/items/{item}', [ReportsController::class, 'printItem']);
+    Route::get('/print/claims/{claim}/slip', [ReportsController::class, 'printClaimSlip']);
+});
+
+
+
+Route::middleware(['auth:sanctum', 'role:staff,admin'])->group(function () {
+    Route::post('/imports/items', [ImportsController::class, 'importItems']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/imports/users', [ImportsController::class, 'importUsers']);
+});
+
+
+
+Route::middleware(['auth:sanctum', 'role:staff,admin'])->group(function () {
+    Route::get('/logs/activity', [ActivityLogsController::class, 'index']);
+});

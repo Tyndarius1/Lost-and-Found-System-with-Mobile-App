@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/assets/css/tokens.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <title>Staff — Print Center</title>
+</head>
+
+<body>
+    <div class="app">
+        <aside class="sidebar card" id="sidebar"></aside>
+
+        <div class="main">
+            <header class="topbar card" id="topbar"></header>
+
+            <main class="content">
+                <div class="container">
+
+                    <div class="grid cols-3">
+                        <div class="card" style="padding:14px; background: #ffffff;">
+                            <div style="font-weight:900;">Document Center</div>
+                            <div style="color:var(--muted); margin-top:6px; font-size:13px;">
+                                Print official records and download reports.
+                            </div>
+                        </div>
+
+                        <div class="card" style="padding:14px; background: #ffffff;">
+                            <div style="font-weight:800;">How it works</div>
+                            <div style="color:var(--muted); margin-top:6px; font-size:13px;">
+                                Documents will open safely in a new browser tab for you to review before printing.
+                            </div>
+                        </div>
+
+                        <div class="card"
+                            style="padding:14px; display:flex; align-items:center; justify-content:space-between; background: #ffffff;">
+                            <div>
+                                <div style="font-weight:900;">Staff Controls</div>
+                                <div style="color:var(--muted); font-size:12px;">Manage official files</div>
+                            </div>
+                            <button class="btn ghost" id="btnClear">Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="grid cols-2 animate-in stagger-2" style="margin-top:24px; align-items:start;">
+
+                        <!-- LEFT: Print by ID -->
+                        <div class="grid" style="gap:24px;">
+
+                            <div class="card" style="padding:24px; background: #ffffff;">
+                                <div style="font-weight:900; font-size: 20px;">Print Item Details</div>
+                                <div style="color:var(--muted); margin-top:6px; font-size:14px;">
+                                    Enter the Item Number below to view and print its full record.
+                                </div>
+
+                                <div style="display:flex; gap:10px; margin-top:20px;">
+                                    <input class="web-input" id="itemId"
+                                        style="background: rgba(0,0,0,0.02); margin:0; padding:12px; border-radius:8px; border:1px solid var(--border);"
+                                        placeholder="Item Number (e.g. 12)" />
+                                    <button class="btn primary" id="btnPrintItem">Open Document</button>
+                                </div>
+
+                                <div id="itemState" style="margin-top:10px; color:var(--muted); font-size:13px;"></div>
+                            </div>
+
+                            <div class="card" style="padding:24px; background: #ffffff;">
+                                <div style="font-weight:900; font-size: 20px;">Print Claim Receipt</div>
+                                <div style="color:var(--muted); margin-top:6px; font-size:14px;">
+                                    Enter the Claim Number to print a release form for a user.
+                                </div>
+
+                                <div style="display:flex; gap:10px; margin-top:20px;">
+                                    <input class="web-input" id="claimId"
+                                        style="background: rgba(0,0,0,0.02); margin:0; padding:12px; border-radius:8px; border:1px solid var(--border);"
+                                        placeholder="Claim Number (e.g. 4)" />
+                                    <button class="btn primary" id="btnPrintClaim">Open Document</button>
+                                </div>
+
+                                <div id="claimState" style="margin-top:10px; color:var(--muted); font-size:13px;"></div>
+                            </div>
+
+                        </div>
+
+                        <!-- RIGHT: Exports -->
+                        <div class="card" style="padding:24px; background: #ffffff;">
+                            <div style="font-weight:900; font-size: 20px;">Download Data</div>
+                            <div style="color:var(--muted); margin-top:6px; font-size:14px;">
+                                Save system information to your computer.
+                            </div>
+
+                            <div class="grid" style="margin-top:20px; gap:16px;">
+
+                                <div class="card" style="padding:16px; background:rgba(0,0,0,.02); box-shadow: none;">
+                                    <div style="font-weight:800;">Items Inventory</div>
+                                    <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+                                        <button class="btn ghost" id="btnItemsExcel" style="background: #ffffff;">Get
+                                            Excel File</button>
+                                        <button class="btn ghost" id="btnItemsPdf" style="background: #ffffff;">Get PDF
+                                            File</button>
+                                    </div>
+                                </div>
+
+                                <div class="card" style="padding:16px; background:rgba(0,0,0,.02); box-shadow: none;">
+                                    <div style="font-weight:800;">Claims History</div>
+                                    <div style="color:var(--muted); font-size:12px; margin-top:6px;">
+                                        Download records of all claims made.
+                                    </div>
+                                    <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+                                        <button class="btn ghost" id="btnClaimsExcel" style="background: #ffffff;">Get
+                                            Excel File</button>
+                                        <button class="btn ghost" id="btnClaimsPdf" style="background: #ffffff;">Get PDF
+                                            File</button>
+                                    </div>
+                                </div>
+
+                                <div class="card" style="padding:16px; background:rgba(0,0,0,.02); box-shadow: none;">
+                                    <div style="font-weight:800;">Quick Tips</div>
+                                    <div style="color:var(--muted); font-size:13px; margin-top:6px;">
+                                        After a document opens, press <b>Ctrl + P</b> to print it.
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div id="exportState" style="margin-top:12px; color:var(--muted); font-size:13px;"></div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module">
+        import { mountSidebar } from "/components/sidebar.js";
+        import { mountTopbar } from "/components/topbar.js";
+        import { requireAuth, requireRole } from "/core/auth.js";
+        import { api } from "/core/api.js";
+        import { toast } from "/components/toast.js";
+
+        requireAuth();
+        requireRole("staff", "admin");
+        mountSidebar("staff");
+        mountTopbar();
+
+        const itemId = document.getElementById("itemId");
+        const claimId = document.getElementById("claimId");
+
+        const itemState = document.getElementById("itemState");
+        const claimState = document.getElementById("claimState");
+        const exportState = document.getElementById("exportState");
+
+        const btnClear = document.getElementById("btnClear");
+
+        btnClear.addEventListener("click", () => {
+            itemId.value = "";
+            claimId.value = "";
+            itemState.textContent = "";
+            claimState.textContent = "";
+            exportState.textContent = "";
+        });
+
+        async function openFile(path, filenameHint = "document") {
+            const res = await api.get(path); // returns Response for non-json
+            if (!(res instanceof Response)) return;
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+
+            // Open in new tab for printing or saving
+            window.open(url, "_blank");
+            return { blob, url };
+        }
+
+        async function downloadFile(path, filename = "download") {
+            const res = await api.get(path);
+            if (!(res instanceof Response)) return;
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        // Print Item
+        document.getElementById("btnPrintItem").addEventListener("click", async () => {
+            const id = itemId.value.trim();
+            if (!id) return toast("Item ID is required.", "warn");
+
+            itemState.textContent = "Generating PDF...";
+            try {
+                await openFile(`/print/items/${id}`, `item-${id}.pdf`);
+                itemState.textContent = "Opened in new tab. Use Ctrl+P to print.";
+                toast("Item PDF opened.", "success");
+            } catch {
+                itemState.textContent = "Failed to generate item PDF.";
+                toast("Unable to open item PDF.", "danger");
+            }
+        });
+
+        // Print Claim
+        document.getElementById("btnPrintClaim").addEventListener("click", async () => {
+            const id = claimId.value.trim();
+            if (!id) return toast("Claim ID is required.", "warn");
+
+            claimState.textContent = "Generating PDF...";
+            try {
+                await openFile(`/print/claims/${id}/slip`, `claim-${id}.pdf`);
+                claimState.textContent = "Opened in new tab. Use Ctrl+P to print.";
+                toast("Claim slip opened.", "success");
+            } catch {
+                claimState.textContent = "Failed to generate claim PDF.";
+                toast("Unable to open claim slip.", "danger");
+            }
+        });
+
+        // Exports
+        document.getElementById("btnItemsExcel").addEventListener("click", async () => {
+            exportState.textContent = "Downloading Items Excel...";
+            try {
+                await downloadFile(`/exports/items/excel`, `items.xlsx`);
+                exportState.textContent = "Downloaded Items Excel.";
+                toast("Items Excel downloaded.", "success");
+            } catch {
+                exportState.textContent = "Failed to download Items Excel.";
+                toast("Export failed.", "danger");
+            }
+        });
+
+        document.getElementById("btnItemsPdf").addEventListener("click", async () => {
+            exportState.textContent = "Opening Items PDF...";
+            try {
+                await openFile(`/exports/items/pdf`, `items.pdf`);
+                exportState.textContent = "Opened Items PDF.";
+                toast("Items PDF opened.", "success");
+            } catch {
+                exportState.textContent = "Failed to open Items PDF.";
+                toast("Export failed.", "danger");
+            }
+        });
+
+        // Claims exports (optional: only works if endpoints exist)
+        document.getElementById("btnClaimsExcel").addEventListener("click", async () => {
+            exportState.textContent = "Downloading Claims Excel...";
+            try {
+                await downloadFile(`/exports/claims/excel`, `claims.xlsx`);
+                exportState.textContent = "Downloaded Claims Excel.";
+                toast("Claims Excel downloaded.", "success");
+            } catch {
+                exportState.textContent = "Claims Excel endpoint not available or failed.";
+                toast("Claims export not available.", "warn");
+            }
+        });
+
+        document.getElementById("btnClaimsPdf").addEventListener("click", async () => {
+            exportState.textContent = "Opening Claims PDF...";
+            try {
+                await openFile(`/exports/claims/pdf`, `claims.pdf`);
+                exportState.textContent = "Opened Claims PDF.";
+                toast("Claims PDF opened.", "success");
+            } catch {
+                exportState.textContent = "Claims PDF endpoint not available or failed.";
+                toast("Claims export not available.", "warn");
+            }
+        });
+    </script>
+
+    <script type="module" src="/components/toast.js"></script>
+
+    <script type="module">
+        import { mountFooter } from "/components/footer.js";
+        mountFooter();
+    </script>
+</body>
+
+</html>

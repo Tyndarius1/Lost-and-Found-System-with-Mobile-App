@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/assets/css/tokens.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/website.css">
+    <title>Lost & Found - Browse Items</title>
+</head>
+
+<body class="website-layout web-bg-animated">
+    <!-- Premium Navbar -->
+    <nav id="navbar"></nav>
+
+    <main class="web-main">
+        <div class="web-container">
+
+            <div
+                style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1 style="font-size: 2.5rem; margin-bottom: 8px;">Browse <span class="text-gradient">Feed</span>
+                    </h1>
+                    <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 500px;">
+                        Search through all reported lost and found items.
+                    </p>
+                </div>
+                <button class="web-btn web-btn-primary" onclick="window.location.href='/pages/user/report.html'">
+                    + Report Item
+                </button>
+            </div>
+
+            <!-- Modern Filters -->
+            <div class="web-card"
+                style="padding: 24px; margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                <div style="display: flex; gap: 16px; flex: 1; min-width: 300px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <input class="web-input" id="fSearch" placeholder="Search keywords..." />
+                    </div>
+                    <div style="width: 140px;">
+                        <select class="web-select" id="fType">
+                            <option value="">All Types</option>
+                            <option value="lost">Lost</option>
+                            <option value="found">Found</option>
+                        </select>
+                    </div>
+                    <div style="width: 140px;">
+                        <select class="web-select" id="fStatus">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="matched">Matched</option>
+                            <option value="claimed">Claimed</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button class="web-btn web-btn-glass" id="btnRefresh" title="Refresh Feed">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 2v6h-6"></path>
+                            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                            <path d="M3 22v-6h6"></path>
+                            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                        </svg>
+                    </button>
+                    <button class="web-btn web-btn-primary" id="btnApply"
+                        style="padding-left: 32px; padding-right: 32px;">Search</button>
+                </div>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 8px;">
+                <div style="color: var(--text-muted);">
+                    Showing <span id="statsCount" style="color: var(--text-main); font-weight: 600;">—</span> results
+                </div>
+            </div>
+
+            <!-- Item Grid -->
+            <div id="list" class="grid cols-3" style="gap: 24px;"></div>
+
+            <!-- Pagination -->
+            <div
+                style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 24px;">
+                <div style="color: var(--text-muted); font-size: 0.95rem;" id="pageInfo">—</div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="web-btn web-btn-glass" id="btnPrev">Previous</button>
+                    <button class="web-btn web-btn-glass" id="btnNext">Next</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { mountNavbar } from "/components/navbar.js";
+        import { requireAuth, requireRole } from "/core/auth.js";
+        import { api } from "/core/api.js";
+        import { toast } from "/components/toast.js";
+        import { normalizePaginator, stripApiPrefix } from "/core/pagination.js";
+        import { itemCard } from "/components/itemCard.js";
+        import { setLoading, restore } from "/components/buttonLoading.js";
+        import { ensureSkeletonStyles, cardSkeleton } from "/components/skeleton.js";
+        import { renderEmptyState } from "/components/emptyState.js";
+
+        requireAuth();
+        requireRole("user", "staff", "admin");
+        mountNavbar();
+
+        const qs = new URLSearchParams(window.location.search);
+
+        const fType = document.getElementById("fType");
+        const fStatus = document.getElementById("fStatus");
+        const fSearch = document.getElementById("fSearch");
+
+        // prefill from URL
+        fType.value = qs.get("type") ?? "";
+        fStatus.value = qs.get("status") ?? "";
+        fSearch.value = qs.get("q") ?? "";
+
+        async function loadPage(url = "/items", delay = false) {
+            const serverParams = new URLSearchParams();
+            if (fType.value) serverParams.set("type", fType.value);
+            if (fStatus.value) serverParams.set("status", fStatus.value);
+
+            const listEl = document.getElementById("list");
+            if (delay) {
+                ensureSkeletonStyles();
+                listEl.innerHTML = Array(6).fill(cardSkeleton()).join("");
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            const full = `${url}${url.includes("?") ? "&" : "?"}${serverParams.toString()}`;
+            const payload = await api.get(full);
+
+            const p = normalizePaginator(payload);
+            let rows = p.data;
+
+            // client-side search for now
+            const q = fSearch.value.trim().toLowerCase();
+            if (q) {
+                rows = rows.filter(r => {
+                    const hay = `${r.title ?? ""} ${r.description ?? ""} ${r.location ?? ""} ${r.category ?? ""} ${r.brand ?? ""} ${r.color ?? ""}`.toLowerCase();
+                    return hay.includes(q);
+                });
+            }
+
+            document.getElementById("statsCount").textContent = p.total ?? rows.length;
+
+            if (!rows.length) {
+                const emptyHtml = renderEmptyState({
+                    title: "No results found",
+                    description: "Try changing your search keywords or filters to find what you're looking for.",
+                });
+                listEl.innerHTML = `<div class="web-card" style="padding:32px; grid-column:1/-1; text-align:center;">${emptyHtml}</div>`;
+            } else {
+                listEl.innerHTML = rows.map(itemCard).join("");
+            }
+
+            document.getElementById("pageInfo").textContent =
+                `Page ${p.current_page} of ${p.last_page} • Showing ${p.from ?? 0}-${p.to ?? rows.length} of ${p.total ?? rows.length}`;
+
+            const next = p.next_page_url ? new URL(p.next_page_url).pathname + new URL(p.next_page_url).search : null;
+            const prev = p.prev_page_url ? new URL(p.prev_page_url).pathname + new URL(p.prev_page_url).search : null;
+            window.__next = stripApiPrefix(next);
+            window.__prev = stripApiPrefix(prev);
+
+            // Open handler
+            listEl.querySelectorAll("[data-open]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = btn.getAttribute("data-open");
+                    window.location.href = `/pages/user/item-show.html?id=${encodeURIComponent(id)}`;
+                });
+            });
+        }
+
+        document.getElementById("btnApply").addEventListener("click", async (e) => {
+            const btn = e.currentTarget;
+            setLoading(btn, "Searching...");
+            const params = new URLSearchParams();
+            if (fType.value) params.set("type", fType.value);
+            if (fStatus.value) params.set("status", fStatus.value);
+            if (fSearch.value.trim()) params.set("q", fSearch.value.trim());
+            window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+            await loadPage("/items", true);
+            restore(btn);
+        });
+
+        document.getElementById("btnRefresh").addEventListener("click", () => loadPage("/items", true));
+
+        document.getElementById("btnPrev").addEventListener("click", () => {
+            if (!window.__prev) return toast("No previous page.", "warn");
+            loadPage(window.__prev);
+        });
+
+        document.getElementById("btnNext").addEventListener("click", () => {
+            if (!window.__next) return toast("No next page.", "warn");
+            loadPage(window.__next);
+        });
+
+        // initial load
+        loadPage("/items");
+    </script>
+
+    <script type="module">
+        import { mountFooter } from "/components/footer.js";
+        mountFooter();
+    </script>
+</body>
+
+</html>
