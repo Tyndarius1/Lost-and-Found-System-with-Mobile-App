@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Lost & Found Mobile</title>
+  <link rel="stylesheet" href="/assets/css/tokens.css" />
+  <link rel="stylesheet" href="/mobile/mobile.css" />
+</head>
+
+<body>
+  <div id="loginView" class="screen">
+    <div class="phone-shell">
+      <h1>Lost & Found</h1>
+      <p class="muted">Mobile quick access</p>
+
+      <form id="loginForm" class="card">
+        <label>Email</label>
+        <input id="email" type="email" required placeholder="you@example.com" />
+
+        <label>Password</label>
+        <input id="password" type="password" required placeholder="••••••••" />
+
+        <label class="inline">
+          <input id="remember" type="checkbox" checked /> Remember me
+        </label>
+
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appView" class="screen hidden">
+    <header class="topbar">
+      <div>
+        <div id="hello" class="hello">Hi</div>
+        <div id="role" class="muted small"></div>
+      </div>
+      <button id="logoutBtn" class="danger">Logout</button>
+    </header>
+
+    <main id="content" class="content"></main>
+
+    <nav class="tabbar">
+      <button data-tab="feed" class="active">Feed</button>
+      <button data-tab="claims">My Claims</button>
+      <button data-tab="review">Review</button>
+    </nav>
+  </div>
+
+  <script type="module" src="/mobile/mobile.js"></script>
+</body>
+
+</html>
