@@ -9,12 +9,24 @@ use Symfony\Component\HttpFoundation\Response;
 class RoleMiddleware
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Ensure an authenticated user has one of the allowed roles.
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if (empty($roles)) {
+            return $next($request);
+        }
+
+        if (!in_array($user->role, $roles, true)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         return $next($request);
     }
 }
