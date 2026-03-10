@@ -4,15 +4,33 @@ namespace App\Policies;
 
 use App\Models\Claim;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ClaimPolicy
 {
     public function view(User $user, Claim $claim): bool
     {
-        return $user->role === 'admin' || $user->role === 'staff' || $user->id === $claim->claimer_id;
+        if ($user->role === 'admin' || $user->role === 'staff' || $user->id === $claim->claimer_id) {
+            return true;
+        }
+
+        return $user->id === optional($claim->item)->reported_by;
     }
 
+    /**
+     * Reporter (item owner) or staff/admin can approve/deny.
+     */
+    public function reviewerDecision(User $user, Claim $claim): bool
+    {
+        if ($user->role === 'admin' || $user->role === 'staff') {
+            return true;
+        }
+
+        return $user->id === optional($claim->item)->reported_by;
+    }
+
+    /**
+     * Only staff/admin can release after physical verification handoff.
+     */
     public function updateStatus(User $user, Claim $claim): bool
     {
         return $user->role === 'admin' || $user->role === 'staff';
