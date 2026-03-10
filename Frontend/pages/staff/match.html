@@ -123,9 +123,24 @@
         let selectedLost = null;
         let selectedFound = null;
 
+        function filterItems(items, query) {
+            const q = query.trim().toLowerCase();
+            if (!q) return items;
+
+            return items.filter(item => {
+                const hay = `${item.title ?? ""} ${item.description ?? ""} ${item.location ?? ""} ${item.category ?? ""} ${item.brand ?? ""} ${item.color ?? ""}`.toLowerCase();
+                return hay.includes(q);
+            });
+        }
+
 
 
         function renderList(items, container, type) {
+            if (!items.length) {
+                container.innerHTML = `<div style="padding:12px; color:var(--muted); border:1px dashed var(--border); border-radius:8px;">No items match your search.</div>`;
+                return;
+            }
+
             container.innerHTML =
                 items.map(item => `
 
@@ -174,8 +189,13 @@
                         else
                             selectedFound = id;
 
+                        const sourceItems = type === "lost" ? lostItems : foundItems;
+                        const query = type === "lost"
+                            ? document.getElementById("lostSearch").value
+                            : document.getElementById("foundSearch").value;
+
                         renderList(
-                            type === "lost" ? lostItems : foundItems,
+                            filterItems(sourceItems, query),
                             container,
                             type
                         );
@@ -198,7 +218,7 @@
                 res.data ?? res;
 
             renderList(
-                lostItems,
+                filterItems(lostItems, document.getElementById("lostSearch").value),
                 document.getElementById("lostList"),
                 "lost"
             );
@@ -216,7 +236,7 @@
                 res.data ?? res;
 
             renderList(
-                foundItems,
+                filterItems(foundItems, document.getElementById("foundSearch").value),
                 document.getElementById("foundList"),
                 "found"
             );
@@ -281,6 +301,22 @@
             };
 
 
+
+        document.getElementById("lostSearch").addEventListener("input", () => {
+            renderList(
+                filterItems(lostItems, document.getElementById("lostSearch").value),
+                document.getElementById("lostList"),
+                "lost"
+            );
+        });
+
+        document.getElementById("foundSearch").addEventListener("input", () => {
+            renderList(
+                filterItems(foundItems, document.getElementById("foundSearch").value),
+                document.getElementById("foundList"),
+                "found"
+            );
+        });
 
         loadLost();
         loadFound();

@@ -120,10 +120,16 @@
         fStatus.value = qs.get("status") ?? "";
         fSearch.value = qs.get("q") ?? "";
 
-        async function loadPage(url = "/items", delay = false) {
+        function buildItemsPath(basePath = "/items") {
             const serverParams = new URLSearchParams();
             if (fType.value) serverParams.set("type", fType.value);
             if (fStatus.value) serverParams.set("status", fStatus.value);
+            if (fSearch.value.trim()) serverParams.set("q", fSearch.value.trim());
+
+            return `${basePath}${basePath.includes("?") ? "&" : "?"}${serverParams.toString()}`;
+        }
+
+        async function loadPage(url = "/items", delay = false) {
 
             const listEl = document.getElementById("list");
             if (delay) {
@@ -132,20 +138,11 @@
                 await new Promise(r => setTimeout(r, 600));
             }
 
-            const full = `${url}${url.includes("?") ? "&" : "?"}${serverParams.toString()}`;
+            const full = buildItemsPath(url);
             const payload = await api.get(full);
 
             const p = normalizePaginator(payload);
-            let rows = p.data;
-
-            // client-side search for now
-            const q = fSearch.value.trim().toLowerCase();
-            if (q) {
-                rows = rows.filter(r => {
-                    const hay = `${r.title ?? ""} ${r.description ?? ""} ${r.location ?? ""} ${r.category ?? ""} ${r.brand ?? ""} ${r.color ?? ""}`.toLowerCase();
-                    return hay.includes(q);
-                });
-            }
+            const rows = p.data;
 
             document.getElementById("statsCount").textContent = p.total ?? rows.length;
 

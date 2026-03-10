@@ -88,13 +88,16 @@ Route::middleware('auth:sanctum')->group(function () {
      */
     Route::post('/claims', [ClaimsController::class, 'store']);
     Route::get('/my/claims', [ClaimsController::class, 'myClaims']);
+    Route::get('/my/item-claims', [ClaimsController::class, 'myItemClaims']);
     Route::get('/claims/{claim}', [ClaimsController::class, 'show']);
+
+    // Reporter + staff/admin can decide approve/deny (policy-enforced)
+    Route::put('/claims/{claim}/approve', [ClaimsController::class, 'approve']);
+    Route::put('/claims/{claim}/deny', [ClaimsController::class, 'deny']);
 
     Route::middleware('role:staff,admin')->group(
         function () {
             Route::get('/claims', [ClaimsController::class, 'index']);
-            Route::put('/claims/{claim}/approve', [ClaimsController::class, 'approve']);
-            Route::put('/claims/{claim}/deny', [ClaimsController::class, 'deny']);
             Route::put('/claims/{claim}/release', [ClaimsController::class, 'release']);
 
             /**
