@@ -65,6 +65,26 @@ If you already use something like Laravel Valet (`backend.test`) or a reverse pr
 
 ---
 
+
+## Mobile app (new)
+
+A lightweight mobile-first app is available at:
+
+- `/mobile/index.html`
+
+It supports:
+- Login/logout
+- Feed browsing with search/type/status filters
+- Submit claim from feed
+- View **My Claims**
+- Review queue tab:
+  - `user` role reviews claims for their own posted items (`/my/item-claims`)
+  - `staff/admin` role reviews full claims queue (`/claims`)
+
+Use the same backend API configuration as the web app (`window.APP_CONFIG.apiBaseUrl`).
+
+---
+
 ## Project structure (overview)
 
 | Path | Purpose |
